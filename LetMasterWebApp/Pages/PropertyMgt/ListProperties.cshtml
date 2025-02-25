@@ -1,0 +1,297 @@
+﻿@page "/Properties"
+@* @inherits LetMasterWebApp.Core.BasePageModel *@
+@model LetMasterWebApp.Pages.PropertyMgt.ListPropertiesModel
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Property List";
+}
+
+<h1>Property List</h1>
+@if (TempData["AlertMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["AlertMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#createPropertyModal"><strong>Create New Property</strong></button>
+<div class="mb-3">
+        <form method="get">
+        <div class="d-flex flex-wrap">
+            <div class="form-group mr-3">
+                <label asp-for="searchModel.Name"></label>
+                <input asp-for="searchModel.Name" class="form-control" />
+            </div>
+            <div class="form-group mr-3">
+                <label asp-for="searchModel.PropertyTypeId"></label>
+                <select asp-for="searchModel.PropertyTypeId" class="form-control">
+                    <option value="">-- Select --</option>
+                    @if (Model.propertyType != null)
+                    {
+                        @foreach (var type in Model.propertyType)
+                        {
+                            <option value="@type.Value">@type.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="form-group mr-3">
+                <label for="IsActive">Unit Active</label>
+                <select class="form-control" id="IsActive" name="IsActive">
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                </select>
+            </div>
+            <div class="form-group align-self-end">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+    </form>
+    </div>
+    <div>
+        @if (Model.propertyList != null && Model.propertyList.Items.Count > 0)
+        {
+            <h2 class="mt-3">Properties</h2>
+            <table class="table table-striped mt-3">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Property Manager</th>
+                        <th>Property Type</th>
+                        <th>Address</th>
+                        <th>Total Units</th>
+                        <th>Occupied Units</th>
+                        <th>Is Active</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var propertyItem in Model.propertyList.Items)
+                    {
+                        <tr>
+                            <td>@propertyItem.Name</td>
+                            <td>@propertyItem.PropertyManager</td>
+                            <td>@propertyItem.PropertyType</td>
+                            <td>@propertyItem.Address</td>
+                            <td>@propertyItem.TotalUnits</td>
+                            <td>@propertyItem.OccupiedUnits</td>
+                            <td>@propertyItem.IsActive</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-warning edit-btn" data-bs-toggle="modal" data-bs-target="#editPropertyModal" data-prt-id="@propertyItem.Id">Edit</button>
+                                <a class="btn btn-sm btn-info manage-btn" asp-page="/PropertyMgt/ManageProperty" asp-route-id="@propertyItem.Id">Manage</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        <div class="mt-3">
+            <a href="/properties?pageIndex=@(Model.searchModel.Page - 1)&Name=@Model.searchModel.Name&IsActive=@Model.searchModel.IsActive&PropertyTypeId=@Model.searchModel.PropertyTypeId"
+               class="btn btn-primary @(Model.propertyList.HasPrev ? "" : "disabled")">
+                Previous
+            </a>
+            <a href="/properties?pageIndex=@(Model.searchModel.Page + 1)&Name=@Model.searchModel.Name&IsActive=@Model.searchModel.IsActive&PropertyTypeId=@Model.searchModel.PropertyTypeId"
+               class="btn btn-primary @(Model.propertyList.HasNext ? "" : "disabled")">
+                Next
+            </a>
+        </div>
+        }
+        else
+        {
+            <p class="mt-3">No properties found.</p>
+        }
+    </div>
+    </div>
+@* Create Property Modal *@
+<div class="modal fade" id="createPropertyModal" tabindex="-1" aria-labelledby="createPropertyModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createPropertyModalLabel">Create Property</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" asp-page-handler="CreateProperty">
+                    @Html.AntiForgeryToken()
+                    @if (ModelState.IsValid)
+                    {
+                        <div asp-validation-summary="All" class="text-danger"></div>
+                    }
+                    <div class="form-group">
+                        <select asp-for="createModel.PropertyManagerId" class="form-control">
+                            @if (Model.propertyManagers != null)
+                                    {
+                                        @foreach (var mgr in Model.propertyManagers)
+                                        {
+                                            <option value="@mgr.Value">@mgr.Text</option>
+                                        }
+                                    }
+                                    </select>
+                                    </div>
+                    <div class="form-group">
+                        <label asp-for="createModel.Name">*</label>
+                        <input asp-for="createModel.Name" class="form-control" />
+                        <span asp-validation-for="createModel.Name" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="createModel.Address">*</label>
+                        <textarea asp-for="createModel.Address" class="form-control"></textarea>
+                        <span asp-validation-for="createModel.Address" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="createModel.Description"></label>
+                        <input asp-for="createModel.Description" class="form-control" />
+                        <span asp-validation-for="createModel.Description" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="createModel.Latitude"></label>
+                        <input asp-for="createModel.Latitude" class="form-control" />
+                        <span asp-validation-for="createModel.Latitude" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="createModel.Longitude"></label>
+                        <input asp-for="createModel.Longitude" class="form-control" />
+                        <span asp-validation-for="createModel.Longitude" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="createModel.IsActive"></label>
+                        <input asp-for="createModel.IsActive" class="form-check-input" type="checkbox" />
+                        <span asp-validation-for="createModel.IsActive" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="createModel.PropertyTypeId">*</label>
+                        <select asp-for="createModel.PropertyTypeId" class="form-control">
+                            @if (Model.propertyType != null)
+                            {
+                                @foreach (var type in Model.propertyType)
+                                {
+                                    <option value="@type.Value">@type.Text</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="createModel.PropertyTypeId" class="text-danger"></span>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-sm btn-primary">Create Property</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@* Edit Property Modal *@
+<div class="modal fade" id="editPropertyModal" tabindex="-1" aria-labelledby="editPropertyModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editPropertyModalLabel">Edit Property</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" asp-page-handler="UpdateProperty">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="id" name="updateModel.Id"/>
+                    <div class="form-group">
+                        <label asp-for="updateModel.Name"></label>
+                        <input asp-for="updateModel.Name" class="form-control" id="name" />
+                        <span asp-validation-for="updateModel.Name" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="updateModel.Address"></label>
+                        <textarea asp-for="updateModel.Address" class="form-control" id="address"></textarea>
+                        <span asp-validation-for="updateModel.Address" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="updateModel.Description"></label>
+                        <textarea asp-for="updateModel.Description" class="form-control" id="description"></textarea>
+                        <span asp-validation-for="updateModel.Description" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="updateModel.PropertyManagerId"></label>
+                        <select asp-for="updateModel.PropertyManagerId" class="form-control" id="propertyManagerId">
+                            @if (Model.propertyManagers != null)
+                            {
+                                @foreach (var mgr in Model.propertyManagers)
+                                {
+                                    <option value="@mgr.Value">@mgr.Text</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="updateModel.PropertyManagerId" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="updateModel.PropertyTypeId"></label>
+                        <select asp-for="updateModel.PropertyTypeId" class="form-control" id="propertyTypeId">
+                            @if (Model.propertyType != null)
+                            {
+                                @foreach (var type in Model.propertyType)
+                                {
+                                    <option value="@type.Value">@type.Text</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="updateModel.PropertyTypeId" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="updateModel.Latitude"></label>
+                        <input asp-for="updateModel.Latitude" class="form-control" id="latitude" />
+                        <span asp-validation-for="updateModel.Latitude" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="updateModel.Longitude"></label>
+                        <input asp-for="updateModel.Longitude" class="form-control" id="longitude" />
+                        <span asp-validation-for="updateModel.Longitude" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="updateModel.IsActive"></label>
+                        <input asp-for="updateModel.IsActive" class="form-check-input" type="checkbox" id="isActive" />
+                        <span asp-validation-for="updateModel.IsActive" class="text-danger"></span>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-sm btn-primary">Save changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('.edit-btn').on('click', function () {
+                var propertyId = $(this).data('prt-id');
+                console.log(propertyId);
+                $.ajax({
+                    url: '/properties?handler=PropertyDetails',
+                    type: 'GET',
+                    data: { id: propertyId },
+                    success: function (data) {
+                        console.log(data);
+                        $('#editPropertyModal #id').val(data.id);
+                        $('#editPropertyModal #name').val(data.name);
+                        $('#editPropertyModal #address').val(data.address);
+                        $('#editPropertyModal #description').val(data.description);
+                        $('#editPropertyModal #propertyManagerId').val(data.propertyManagerId);
+                        $('#editPropertyModal #propertyTypeId').val(data.propertyTypeId);
+                        $('#editPropertyModal #latitude').val(data.latitude);
+                        $('#editPropertyModal #longitude').val(data.longitude);
+                        $('#editPropertyModal #isActive').prop('checked', data.isActive);
+                        $('#editPropertyModal').modal('show');
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(xhr.responseText);
+                        alert("An error occurred while fetching property details.");
+                    }
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,81 @@
+﻿@model LetMasterWebApp.Models.UserUpdateModel
+<div class="modal fade" id="editUserModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit User</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editUserForm">
+                    <input type="hidden" id="Id" />
+                    <div class="form-group">
+                        <label asp-for="IsIndividual"></label>
+                        <input asp-for="IsIndividual" class="form-check-input" type="checkbox" id="isIndividualUpdateCheckbox" />
+                        <span asp-validation-for="IsIndividual" class="text-danger"></span>
+                    </div>
+                    <div id="individualUpdateFields" style="display:none;">
+                        <div class="form-group">
+                            <label asp-for="FirstNameUpdate"></label>
+                            <input asp-for="FirstNameUpdate" class="form-control" />
+                            <span asp-validation-for="FirstNameUpdate" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="LastNameUpdate"></label>
+                            <input asp-for="LastNameUpdate" class="form-control" />
+                            <span asp-validation-for="LastNameUpdate" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div id="otherNameUpdateField" style="display:none;">
+                        <div class="form-group">
+                            <label asp-for="OtherNamesUpdate"></label>
+                            <input asp-for="OtherNamesUpdate" class="form-control" />
+                            <span asp-validation-for="OtherNamesUpdate" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Address"></label>
+                        <textarea asp-for="Address" class="form-control"></textarea>
+                        <span asp-validation-for="Address" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="PhoneNumber"></label>
+                        <input asp-for="PhoneNumber" class="form-control" />
+                        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="MobileNumber"></label>
+                        <input asp-for="MobileNumber" class="form-control" />
+                        <span asp-validation-for="MobileNumber" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Email"></label>
+                        <input asp-for="Email" type="email" class="form-control" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="IsActive"></label>
+                        <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                        <span asp-validation-for="IsActive" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Roles"></label>
+                        <select asp-for="Roles" class="form-control" multiple>
+                            @foreach (var role in Model.AvailableRoles)
+                            {
+                                <option value="@role">@role</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Roles" class="text-danger"></span>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-sm btn-primary">Save changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

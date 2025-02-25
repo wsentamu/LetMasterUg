@@ -1,0 +1,43 @@
+﻿@model LetMasterWebApp.Models.UserViewModel
+<div class="modal fade" id="viewUserModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">User Details</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Username:</dt>
+                    <dd class="col-sm-8">@Model.UserName</dd>
+
+                    <dt class="col-sm-4">Display Name:</dt>
+                    <dd class="col-sm-8">@Model.DisplayName</dd>
+
+                    <dt class="col-sm-4">Physical Address:</dt>
+                    <dd class="col-sm-8">@Model.Address</dd>
+
+                    <dt class="col-sm-4">Phone Number:</dt>
+                    <dd class="col-sm-8">@Model.PhoneNumber</dd>
+
+                    <dt class="col-sm-4">Alternate Number:</dt>
+                    <dd class="col-sm-8">@Model.MobileNumber</dd>
+
+                    <dt class="col-sm-4">Email Address:</dt>
+                    <dd class="col-sm-8">@Model.Email</dd>
+
+                    <dt class="col-sm-4">Active:</dt>
+                    <dd class="col-sm-8">@Model.IsActive</dd>
+
+                    <dt class="col-sm-4">Roles:</dt>
+                    <dd class="col-sm-8">@string.Join(", ", Model.Roles)</dd>
+                </dl>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

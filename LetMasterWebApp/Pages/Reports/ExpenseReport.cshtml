@@ -1,0 +1,83 @@
+﻿@page "/Expenses"
+@model LetMasterWebApp.Pages.Reports.ExpenseReportModel
+@{
+    ViewData["Title"] = "Property Expense Report";
+}
+<a class="btn btn-sm btn-warning manage-btn" asp-page="/reports/AccountStatement">Tenant Account Statement</a>
+<a class="btn btn-sm btn-warning manage-btn" asp-page="/reports/OccupancyReport">Occupancy Report</a>
+<a class="btn btn-sm btn-warning manage-btn" asp-page="/reports/PropertyTransactionReport">Property Rent Transaction Report</a>
+<h2>Expense Report</h2>
+<div class="mb-3">
+    <form method="post">
+        <div class="d-flex flex-wrap">
+            <div class="form-group mr-3">
+                <label for="PropertyId" class="mr-2">Property</label>
+                <select id="PropertyId" name="searchModel.PropertyId" class="form-control mr-2" required>
+                    <option value="">Select Property</option>
+                    @foreach (var property in Model.properties!)
+                    {
+                        if (property.Value == Model.searchModel?.PropertyId?.ToString())
+                        {
+                            <option value="@property.Value" selected>@property.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@property.Value">@property.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="form-group mr-3">
+                <label for="DateFrom" class="mr-2">Date From</label>
+                <input type="date" id="DateFrom" name="searchModel.DateFrom" class="form-control mr-2" value="@Model.searchModel!.DateFrom.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="form-group mr-3">
+                <label for="DateTo" class="mr-2">Date To</label>
+                <input type="date" id="DateTo" name="searchModel.DateTo" class="form-control mr-2" value="@Model.searchModel.DateTo.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="form-group align-self-end">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+    </form>
+</div>
+@if (Model.expenses != null && Model.expenses.Expenses.Count > 0)
+{
+    <h3 class="mt-3">Expenses: @Model.expenses.PropertyName</h3>
+    <p><b>Location</b>: @Model.expenses.PropertyAddress</p>
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Unit No</th>
+                <th>Expense Description</th>
+                <th>Expense Type</th>
+                <th>Amount</th>
+                <th>Transaction Date</th>
+                <th>Date Posted</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var expense in Model.expenses.Expenses)
+            {
+                <tr>
+                    <td>@expense.UnitNo</td>
+                    <td>@expense.ExpenseDesc</td>
+                    <td>@expense.ExpenseType</td>
+                    <td>@expense.Amount!.Value.ToString("N2")</td>
+                    <td>@expense.TransactionDate.ToString("yyyy-MM-dd")</td>
+                    <td>@expense.TransactionCreationDate?.ToString("yyyy-MM-dd")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <form method="post" asp-page-handler="ExportToExcel">
+        <input type="hidden" name="searchModel.PropertyId" value="@Model.searchModel?.PropertyId" />
+        <input type="hidden" name="searchModel.DateFrom" value="@Model.searchModel?.DateFrom.ToString("yyyy-MM-dd")" />
+        <input type="hidden" name="searchModel.DateTo" value="@Model.searchModel?.DateTo.ToString("yyyy-MM-dd")" />
+        <button type="submit" class="btn btn-success mt-2" value="Export" asp-page-handler="Export">Export Data</button>
+    </form>
+}
+else
+{
+    <p>No expenses found for the selected criteria.</p>
+}

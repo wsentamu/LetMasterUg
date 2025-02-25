@@ -1,0 +1,403 @@
+﻿@page "/users"
+@model LetMasterWebApp.Pages.UserMgt.ListUsersModel
+@{
+    ViewData["Title"] = "List Users";
+}
+@if (TempData["AlertMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["AlertMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+<div id="alertContainer"></div>
+<h1>List Users</h1>
+<ul class="nav nav-tabs" id="userTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <a class="nav-link active" id="results-tab" data-bs-toggle="tab" href="#results" role="tab" aria-controls="results" aria-selected="false">Results</a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link" id="search-tab" data-bs-toggle="tab" href="#search" role="tab" aria-controls="search" aria-selected="true">Search</a>
+    </li>
+</ul>
+<p></p>
+<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#createUserModal">Create User</button>
+<div class="tab-content" id="userTabContent">
+    <div class="tab-pane fade" id="search" role="tabpanel" aria-labelledby="search-tab">
+        <form method="post" asp-page-handler="Search" class="mt-3">
+            <div class="form-group">
+                <label asp-for="searchModel.UserName"></label>
+                <input asp-for="searchModel.UserName" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label asp-for="searchModel.Email"></label>
+                <input asp-for="searchModel.Email" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label asp-for="searchModel.PhoneNumber"></label>
+                <input asp-for="searchModel.PhoneNumber" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label asp-for="searchModel.DisplayName"></label>
+                <input asp-for="searchModel.DisplayName" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label asp-for="searchModel.Role"></label>
+                <select asp-for="searchModel.Role" class="form-control">
+                    <option value="">-- Select a Role --</option>
+                    @if (Model.roles != null)
+                    {
+                        @foreach (var role in Model.roles)
+                        {
+                            <option value="@role.Value">@role.Text</option>
+                        }
+                    }
+                    </select>
+            </div>
+            <div class="form-group form-check">
+                <input asp-for="searchModel.IsActive" class="form-check-input" type="checkbox" />
+                <label asp-for="searchModel.IsActive" class="form-check-label"></label>
+            </div>
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+    </div>
+    <div class="tab-pane fade show active" id="results" role="tabpanel" aria-labelledby="results-tab">
+        @if (Model.users != null && Model.users.Items.Count > 0)
+        {
+            <h2 class="mt-3">Users</h2>
+            <table class="table table-striped mt-3">
+                <thead>
+                    <tr>
+                        <th>User Name</th>
+                        <th>Email</th>
+                        <th>Phone Number</th>
+                        <th>Mobile Number</th>
+                        <th>Display Name</th>
+                        <th>Is Active</th>
+                        <th>Role(s)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.users.Items)
+                    {
+                        <tr>
+                            @* <td>@user.Id</td> *@
+                            <td>@user.UserName</td>
+                            <td>@user.Email</td>
+                            <td>@user.PhoneNumber</td>
+                            <td>@user.MobileNumber</td>
+                            <td>@user.DisplayName</td>
+                            <td>@user.IsActive</td>
+                            <td>@string.Join(", ", user.Roles)</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning edit-user-btn" data-toggle="modal" data-target="#editUserModal" data-user-id="@user.Id">Edit</button>
+                                <button class="btn btn-sm btn-info view-details-btn" data-toggle="modal" data-target="#viewUserModal" data-user-id="@user.Id">View</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            var noPrev = !Model.users.HasPrev ? "disabled" : "";
+            var noNxt = !Model.users.HasNext ? "disabled" : "";
+            <a href="/users?pageIndex=@(Model.users.CurrentPage - 1)"
+               class="btn btn-primary @noPrev">
+                Previous
+            </a>
+            <a href="/users?pageIndex=@(Model.users.CurrentPage + 1)"
+               class="btn btn-primary @noNxt">
+                Next
+            </a>
+            @await Html.PartialAsync("EditUserWidget", new Models.UserUpdateModel { AvailableRoles = new List<SelectListItem>() })
+            @await Html.PartialAsync("ViewUserWidget", new Models.UserViewModel())
+        }
+        else
+        {
+            <p class="mt-3">No users found.</p>
+        }
+    </div>
+
+</div>
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createUserModalLabel">Create User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" asp-page-handler="CreateUser">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="All" class="text-danger"></div>
+                    <div class="form-group">
+                        <label asp-for="createModel.IsIndividual"></label>
+                        <input asp-for="createModel.IsIndividual" class="form-check-input" type="checkbox" id="isIndividualCheckbox" />
+                        <span asp-validation-for="createModel.IsIndividual" class="text-danger"></span>
+                    </div>
+                    <div id="individualFields" style="display:none;">
+                        <div class="form-group">
+                            <label asp-for="createModel.FirstName"></label>
+                            <input asp-for="createModel.FirstName" class="form-control" id="firstName"/>
+                            <span asp-validation-for="createModel.FirstName" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="createModel.LastName"></label>
+                            <input asp-for="createModel.LastName" class="form-control" id="lastName" />
+                            <span asp-validation-for="createModel.LastName" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div id="otherNamesField" style="display:none;">
+                        <div class="form-group">
+                            <label asp-for="createModel.OtherNames"></label>
+                            <input asp-for="createModel.OtherNames" class="form-control" id="otherName" />
+                            <span asp-validation-for="createModel.OtherNames" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="createModel.Address"></label>
+                        <textarea asp-for="createModel.Address" class="form-control"></textarea>
+                        <span asp-validation-for="createModel.Address" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="createModel.PhoneNumber"></label>
+                        <input asp-for="createModel.PhoneNumber" class="form-control" required pattern="\d*" title="Only digits are allowed" />
+                        <span asp-validation-for="createModel.PhoneNumber" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="createModel.MobileNumber"></label>
+                        <input asp-for="createModel.MobileNumber" class="form-control" pattern="\d*" title="Only digits are allowed" />
+                        <span asp-validation-for="createModel.MobileNumber" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="createModel.Email"></label>
+                        <input asp-for="createModel.Email" type="email" class="form-control" required/>
+                        <span asp-validation-for="createModel.Email" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="createModel.IsActive"></label>
+                        <input asp-for="createModel.IsActive" class="form-check-input" type="checkbox" />
+                        <span asp-validation-for="createModel.IsActive" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="createModel.Roles"></label>
+                        <select asp-for="createModel.Roles" class="form-control" multiple>
+                            @if (Model.roles != null)
+                            {
+                                @foreach (var role in Model.roles)
+                                {
+                                    <option value="@role.Value">@role.Text</option>
+                                }
+                            }                           
+                        </select>
+                        <span asp-validation-for="createModel.Roles" class="text-danger"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Script to Toggle Field Visibility -->
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            // Edit User button click event
+            $('.edit-user-btn').click(function () {
+                var userId = $(this).data('user-id');
+                $.ajax({
+                    url: '/users?handler=User',
+                    type: 'GET',
+                    data: { id: userId },
+                    success: function (data) {
+                        // Populate modal form fields with fetched user data
+                        $('#Id').val(data.id);
+                        $('#IsIndividual').prop('checked', data.isIndividual);
+                        $('#individualUpdateFields').toggle(data.isIndividual);
+                        $('#FirstNameUpdate').val(data.firstNameUpdate);
+                        $('#LastNameUpdate').val(data.lastNameUpdate);
+                        $('#OtherNamesUpdate').val(data.otherNamesUpdate);
+                        $('#Address').val(data.address);
+                        $('#PhoneNumber').val(data.phoneNumber);
+                        $('#MobileNumber').val(data.mobileNumber);
+                        $('#Email').val(data.email);
+                        $('#IsActive').prop('checked', data.isActive);
+                        // Assuming 'Roles' is a multiple select input
+                        var rolesSelect = $('#Roles');
+                        rolesSelect.empty(); // Clear current options
+                        data.availableRoles.forEach(function (role) {
+                            var selected = data.roles.includes(role.value) ? 'selected' : '';
+                            rolesSelect.append(`<option value="${role.value}" ${selected}>${role.text}</option>`);
+                        });
+                        // Trigger Bootstrap modal
+                        $('#editUserModal').modal('show');
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(error);
+                    }
+                });
+            });
+            // View Details button click event
+            $('.view-details-btn').click(function () {
+                var userId = $(this).data('user-id');
+                $.ajax({
+                    url: '/users?handler=UserDetails',
+                    type: 'GET',
+                    data: { id: userId },
+                    success: function (data) {
+                        console.log(data);
+                        // Populate modal with user details
+                        $('#viewUserModal .modal-body').html(`
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Username:</dt>
+                                        <dd class="col-sm-8">${data.userName}</dd>
+                                        <dt class="col-sm-4">Name:</dt>
+                                        <dd class="col-sm-8">${data.displayName}</dd>
+                                        <dt class="col-sm-4">Physical Address:</dt>
+                                        <dd class="col-sm-8">${data.address}</dd>
+                                        <dt class="col-sm-4">Phone Number:</dt>
+                                        <dd class="col-sm-8">${data.phoneNumber}</dd>
+                                        <dt class="col-sm-4">Alternate Number:</dt>
+                                        <dd class="col-sm-8">${data.mobileNumber}</dd>
+                                        <dt class="col-sm-4">Email Address:</dt>
+                                        <dd class="col-sm-8">${data.email}</dd>
+                                        <dt class="col-sm-4">Active:</dt>
+                                        <dd class="col-sm-8">${data.isActive}</dd>
+                                        <dt class="col-sm-4">Roles:</dt>
+                                        <dd class="col-sm-8">${data.roles.join(", ")}</dd>
+                                    </dl>
+                                `);
+                        $('#viewUserModal').modal('show');
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(error);
+                    }
+                });
+            });
+            // Handle form submission
+            $('#editUserForm').submit(function (event) {
+                event.preventDefault();
+                var formData = {
+                    id: $('#Id').val(),
+                    isIndividual: $('#IsIndividual').is(':checked'),
+                    firstNameUpdate: $('#FirstNameUpdate').val(),
+                    lastNameUpdate: $('#LastNameUpdate').val(),
+                    otherNamesUpdate: $('#OtherNamesUpdate').val(),
+                    address: $('#Address').val(),
+                    phoneNumber: $('#PhoneNumber').val(),
+                    mobileNumber: $('#MobileNumber').val(),
+                    email: $('#Email').val(),
+                    isActive: $('#IsActive').is(':checked'),
+                    roles: $('#Roles').val()
+                };
+                var antiForgeryToken = $('input[name="__RequestVerificationToken"]').val();
+                $.ajax({
+                    url: '/users?handler=Update',
+                    type: 'POST',
+                    headers: {
+                        'RequestVerificationToken': antiForgeryToken
+                    },
+                    data: JSON.stringify(formData),
+                    contentType: 'application/json',
+                    success: function (data) {
+                        if (data.success) {
+                            $('#editUserModal').modal('hide');
+                            showAlert('User updated successfully!', 'success');
+                            // Optionally, refresh the user list or update the table row
+                        } else {
+                            showAlert('Failed to update: ' + data.message, 'danger');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(error);
+                        showAlert('An error occurred while updating the user.', 'danger');
+                    }
+                });
+            });
+        });
+        function showAlert(message, type) {
+            var alertHtml = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                                            ${message}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                         </div>`;
+            $('#alertContainer').html(alertHtml);
+        }
+        document.getElementById('isIndividualCheckbox').addEventListener('change', function() {
+            var firstName = document.getElementById('firstName');
+            var lastName = document.getElementById('lastName');
+            var otherName = document.getElementById('otherName');
+            if (this.checked) {
+                document.getElementById('individualFields').style.display = 'block';
+                document.getElementById('otherNamesField').style.display = 'none';
+                firstName.setAttribute('required', 'required');
+                lastName.setAttribute('required', 'required');
+                otherName.removeAttribute('required');
+            } else {
+                document.getElementById('individualFields').style.display = 'none';
+                document.getElementById('otherNamesField').style.display = 'block';
+                firstName.removeAttribute('required');
+                lastName.removeAttribute('required');
+                otherName.setAttribute('required', 'required');
+            }
+        });
+        // Initialize the form with the correct visibility on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            var checkbox = document.getElementById('isIndividualCheckbox');
+            var firstName = document.getElementById('firstName');
+            var lastName = document.getElementById('lastName');
+            var otherName = document.getElementById('otherName');
+
+            if (checkbox.checked) {
+                document.getElementById('individualFields').style.display = 'block';
+                document.getElementById('otherNamesField').style.display = 'none';
+                firstName.setAttribute('required', 'required');
+                lastName.setAttribute('required', 'required');
+                otherName.removeAttribute('required');
+            } else {
+                document.getElementById('individualFields').style.display = 'none';
+                document.getElementById('otherNamesField').style.display = 'block';
+                firstName.removeAttribute('required');
+                lastName.removeAttribute('required');
+                otherName.setAttribute('required', 'required');
+            }
+            // Ensure only digits are allowed in phone and mobile number fields
+            var phone = document.getElementById('MobileNumber');
+            phone.addEventListener('input', function () {
+                this.value = this.value.replace(/\D/g, '');
+            });
+
+            var mobile = document.getElementById('PhoneNumber');
+            mobile.addEventListener('input', function () {
+                this.value = this.value.replace(/\D/g, '');
+            });
+        });
+        //update model
+        document.getElementById('isIndividualUpdateCheckbox').addEventListener('change', function () {
+            if (this.checked) {
+                document.getElementById('individualUpdateFields').style.display = 'block';
+                document.getElementById('otherNameUpdateField').style.display = 'none';
+            } 
+            else {
+                document.getElementById('individualUpdateFields').style.display = 'none';
+                document.getElementById('otherNameUpdateField').style.display = 'block';
+            }
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+            var checkbox = document.getElementById('isIndividualUpdateCheckbox');
+            if (checkbox.checked) {
+                document.getElementById('individualUpdateFields').style.display = 'block';
+                document.getElementById('otherNameUpdateField').style.display = 'none';
+            }
+            else {
+                document.getElementById('individualUpdateFields').style.display = 'none';
+                document.getElementById('otherNameUpdateField').style.display = 'block';
+            }
+        });
+    </script>
+}

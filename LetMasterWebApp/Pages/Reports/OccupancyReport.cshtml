@@ -1,0 +1,93 @@
+﻿@page "/Occupancy"
+@model LetMasterWebApp.Pages.Reports.OccupancyReportModel
+@{
+    ViewData["Title"] = "Property Occupancy Report";
+}
+<a class="btn btn-sm btn-warning manage-btn" asp-page="/reports/ExpenseReport">Expense Report</a>
+<a class="btn btn-sm btn-warning manage-btn" asp-page="/reports/AccountStatement">Tenant Account Statement</a>
+<a class="btn btn-sm btn-warning manage-btn" asp-page="/reports/PropertyTransactionReport">Property Rent Transaction Report</a>
+<h2>Property Occupancy Report</h2>
+<div class="mb-3">
+    <form method="post">
+        <div class="d-flex flex-wrap">
+            <div class="form-group mr-3">
+                <label for="PropertyId" class="mr-2">Property</label>
+                <select id="PropertyId" name="searchModel.PropertyId" class="form-control mr-2" required>
+                    <option value="">Select Property</option>
+                    @foreach (var property in Model.properties!)
+                    {
+                        if (property.Value == Model.searchModel?.PropertyId?.ToString())
+                        {
+                            <option value="@property.Value" selected>@property.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@property.Value">@property.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="form-group align-self-end">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+    </form>
+</div>
+@if (Model.occupancyReport != null&&Model.occupancyReport.UnitDetails != null && Model.occupancyReport.UnitDetails.Count > 0)
+{
+    <h3 class="mt-3">Occupancy Report: @Model.occupancyReport.PropertyName</h3>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-sm-6">
+                <p class="card-text"><b>Property Location</b>: @Model.occupancyReport.PropertyAddress</p>
+                <p class="card-text"><b>Property Type</b>: @Model.occupancyReport.PropertyType</p>
+                <p class="card-text"><b>Description</b>: @Model.occupancyReport.PropertyDesc</p>
+            </div>
+            <div class="col-sm-6">
+                <p class="card-text"><b>Total Units</b>: @Model.occupancyReport.TotalUnits</p>
+                <p class="card-text"><b>Occupied Units</b>: @Model.occupancyReport.OccupiedUnits</p>
+            </div>
+        </div>
+    </div>
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Unit No.</th>
+                <th>Unit Type</th>
+                <th>Standard Rate</th>
+                <th>Is Occupied</th>
+                <th>Current Tenant</th>
+                <th>Tenancy Start Date</th>
+                <th>Tenant Contact</th>
+                <th>Tenant Email</th>
+                <th>Agreed Rate</th>
+                <th>Current Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var unit in Model.occupancyReport.UnitDetails)
+            {
+                <tr>
+                    <td>@unit.UnitNo</td>
+                    <td>@unit.UnitType</td>
+                    <td>@unit.StandardRate!.Value.ToString("N2")</td>
+                    <td>@unit.IsOccupied</td>
+                    <td>@unit.TenantName</td>
+                    <td>@unit.StartDate?.ToString("yyyy-MM-dd")</td>
+                    <td>@unit.TenantContact</td>
+                    <td>@unit.TenantEmail</td>
+                    <td>@unit.AgreedRate?.ToString("C")</td>
+                    <td>@unit.CurrentBalance?.ToString("N2")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <form method="post" asp-page-handler="ExportToExcel">
+        <input type="hidden" name="searchModel.PropertyId" value="@Model.searchModel?.PropertyId" />
+        <button type="submit" class="btn btn-success mt-2" value="Export" asp-page-handler="Export">Export Data</button>
+    </form>
+}
+else
+{
+    <p>No data found for the selected criteria.</p>
+}

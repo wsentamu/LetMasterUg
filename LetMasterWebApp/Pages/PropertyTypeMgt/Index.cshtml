@@ -1,0 +1,55 @@
+﻿@page "/PropertyType"
+@model LetMasterWebApp.Pages.Admin.IndexModel
+
+@{
+    ViewData["Title"] = "Property Types";
+}
+<a class="btn btn-sm btn-warning manage-btn" asp-page="/unittypemgt/index">Configure Unit Types</a>
+<a class="btn btn-sm btn-warning manage-btn" asp-page="/expensetypemgt/index">Configure Expense Types</a>
+<h1>Property Types</h1>
+
+<p>
+    <a asp-page="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.PropertyType[0].Name)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.PropertyType[0].CreatedDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.PropertyType[0].UpdatedDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.PropertyType[0].IsActive)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model.PropertyType) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Name)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.CreatedDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.UpdatedDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IsActive)
+            </td>
+            <td>
+                <a asp-page="./Edit" asp-route-id="@item.Id">Edit</a> |
+                <a asp-page="./Details" asp-route-id="@item.Id">Details</a> |
+                <a asp-page="./Delete" asp-route-id="@item.Id">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

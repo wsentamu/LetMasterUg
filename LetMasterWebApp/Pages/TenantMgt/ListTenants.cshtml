@@ -1,0 +1,337 @@
+﻿@page "/Tenants"
+@model LetMasterWebApp.Pages.TenantMgt.ListTenantsModel
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = "Tenant Account List";
+}
+@if (TempData["AlertMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["AlertMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+<h1>Tenant Account List</h1>
+<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#createTenantAccountModal">Create Tenant Account</button>
+<div class="mb-3">
+    <form method="get">
+        <div class="d-flex flex-wrap">
+            <div class="form-group mr-3">
+                <label for="TenantName">Tenant Name</label>
+                <input type="text" class="form-control" id="TenantName" name="TenantName" value="@Model.searchModel.TenantName" placeholder="Enter tenant name">
+            </div>
+            <div class="form-group mr-3">
+                <label for="UnitName">Unit Name</label>
+                <input type="text" class="form-control" id="UnitName" name="UnitName" value="@Model.searchModel.UnitName" placeholder="Enter unit name">
+            </div>
+            <div class="form-group mr-3">
+                <label for="PropertyId">Property</label>
+                <select class="form-control" id="PropertyId" name="PropertyId">
+                    <option value="">Select Property</option>
+                    @foreach (var property in Model.properties!)
+                    {
+                        <option value="@property.Value">@property.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group align-self-end">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div>
+    @if (Model.tenantList != null && Model.tenantList.Items.Count > 0)
+    {
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Contact</th>
+                    <th>Property Name</th>
+                    <th>Unit Number</th>
+                    <th>Billing Start Date</th>
+                    <th>Agreed Rate</th>
+                    <th>Current Balance</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var tenantItem in Model.tenantList.Items)
+                {
+                    var bal = $"<p style=\"color:black;\">{@tenantItem.CurrentBalance.ToString("C")}</p>";
+                    if (tenantItem.CurrentBalance <= 0)
+                    {
+                        bal = $"<p style=\"color:green;\">{@tenantItem.CurrentBalance.ToString("C")}</p>";
+                    }
+                    <tr>
+                        <td>@tenantItem.TenantName</td>
+                        <td>@tenantItem.TenantMobile</td>
+                        <td>@tenantItem.PropertyName</td>
+                        <td>@tenantItem.UnitName</td>
+                        <td>@tenantItem.StartDate.ToString("MM/dd/yyyy")</td>
+                        <td>@tenantItem.AgreedRate.ToString("N2")</td>
+                        <td>@Html.Raw(bal)</td>
+                        <td><a class="btn btn-sm btn-info manage-btn" asp-page="/TenantMgt/ManageTenantAccount" asp-route-id="@tenantItem.TenantUnitId">Manage</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="mt-3">
+            <a href="/tenants?pageIndex=@(Model.tenantList.CurrentPage - 1)&TenantName=@Model.searchModel.TenantName&UnitName=@Model.searchModel.UnitName&PropertyId=@Model.searchModel.PropertyId"
+               class="btn btn-primary @(Model.tenantList.HasPrev ? "" : "disabled")">
+                Previous
+            </a>
+            <a href="/tenants?pageIndex=@(Model.tenantList.CurrentPage + 1)&TenantName=@Model.searchModel.TenantName&UnitName=@Model.searchModel.UnitName&PropertyId=@Model.searchModel.PropertyId"
+               class="btn btn-primary @(Model.tenantList.HasNext ? "" : "disabled")">
+                Next
+            </a>
+        </div>
+    }
+    else
+    {
+        <p class="mt-3">No active tenant accounts found.</p>
+    }
+</div>
+<!--Create Tenant Account Modal -->
+<div class="modal fade" id="createTenantAccountModal" tabindex="-1" role="dialog" aria-labelledby="createTenantModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="createTenantForm" method="post" asp-page-handler="CreateUnitAcc">
+                @Html.AntiForgeryToken()
+                @if (ModelState.IsValid)
+                {
+                    <div asp-validation-summary="All" class="text-danger"></div>
+                }
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createTenantModalLabel">Create Tenant</h5>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="form-group">
+                        <input type="checkbox" asp-for="createModel.IsExistingTenant" id="IsExistingTenant" />
+                        <label for="IsExistingTenant">Is Existing Tenant</label>
+                    </div>
+
+                    <div class="form-group" id="tenantIdSection" style="display: none;">
+                        <label asp-for="createModel.TenantId"></label>
+                        <select asp-for="createModel.TenantId" class="form-control" id="tenantDropdown">
+                            <option value="">Select Tenant</option>
+                            @if (Model.tenants != null)
+                            {
+                                @foreach (var tenant in Model.tenants)
+                                {
+                                    <option value="@tenant.Value">@tenant.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div id="newTenantSection">
+                        <div class="form-group" id="createAccountSection" style="display: none;">
+                            <input type="checkbox" asp-for="createModel.CreateAccount" id="CreateAccount" />
+                            <label for="CreateAccount">Create Account</label>
+                        </div>
+                        <div class="form-group" id="isIndividualSection" style="display: none;">
+                            <input type="checkbox" asp-for="createModel.IsIndividual" id="IsIndividual" />
+                            <label for="IsIndividual">Is Individual</label>
+                        </div>
+
+                        <div id="individualDetailsSection" style="display: none;">
+                            <div class="form-group">
+                                <label asp-for="createModel.FirstName">*</label>
+                                <input asp-for="createModel.FirstName" class="form-control" id="FirstName"/>
+                            </div>
+
+                            <div class="form-group">
+                                <label asp-for="createModel.LastName">*</label>
+                                <input asp-for="createModel.LastName" class="form-control" id="LastName"/>
+                            </div>
+                        </div>
+
+                        <div id="nonIndividualDetailsSection" style="display: none;">
+                            <div class="form-group">
+                                <label asp-for="createModel.OtherNames">*</label>
+                                <input asp-for="createModel.OtherNames" class="form-control" id="OtherNames"/>
+                            </div>
+                        </div>
+
+                        <div id="commonDetailsSection">
+                            <div class="form-group">
+                                <label asp-for="createModel.PhoneNumber">*</label>
+                                <input asp-for="createModel.PhoneNumber" class="form-control" required />
+                            </div>
+
+                            <div class="form-group">
+                                <label asp-for="createModel.MobileNumber"></label>
+                                <input asp-for="createModel.MobileNumber" class="form-control" />
+                            </div>
+
+                            <div class="form-group">
+                                <label asp-for="createModel.Email">*</label>
+                                <input asp-for="createModel.Email" id="TenantEmail" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="createModel.PropertyId">*</label>
+                        <select asp-for="createModel.PropertyId" class="form-control" id="propertyDropdown">
+                            <option value="">--Select Property--</option>
+                            @if (Model.properties != null)
+                            {
+                                @foreach (var property in Model.properties)
+                                {
+                                    <option value="@property.Value">@property.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="createModel.UnitId">*</label>
+                        <select asp-for="createModel.UnitId" class="form-control" id="unitDropdown">
+                            <option value="">Select Unit</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="createModel.AgreedRate">*</label>
+                        <input asp-for="createModel.AgreedRate" type="number" class="form-control" required id="unitAmount" />
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="createModel.DepositAmount"></label>
+                        <input asp-for="createModel.DepositAmount" type="number" class="form-control" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="createModel.TransactionMode"></label>
+                        <input asp-for="createModel.TransactionMode" placeholder="Bank/Mobile Money" class="form-control" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="createModel.TransactionRef"></label>
+                        <input asp-for="createModel.TransactionRef" class="form-control" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="createModel.StartDate"></label>
+                        <input asp-for="createModel.StartDate" class="form-control" type="date" required />
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            function toggleSections() {
+                var isExistingTenant = $('#IsExistingTenant').is(':checked');
+                var createAccount = $('#CreateAccount').is(':checked');
+                var isIndividual = $('#IsIndividual').is(':checked');
+
+                // Toggle sections based on IsExistingTenant
+                if (isExistingTenant) {
+                    $('#tenantIdSection').show();
+                    $('#tenantIdSection input').prop('required', true);
+                    $('#newTenantSection').hide();
+                } else {
+                    $('#tenantIdSection').hide();
+                    $('#tenantIdSection input').prop('required', false);
+                    $('#newTenantSection').show();
+                    $('#createAccountSection').show();
+                    $('#isIndividualSection').show();
+
+                    // Toggle username section based on CreateAccount
+                    if (createAccount) {
+                        $('#TenantEmail input').prop('required', true);
+                    } else {
+                        $('#TenantEmail input').prop('required', false);
+                    }
+
+                    // Toggle individual and non-individual sections
+                    if (isIndividual) {
+                        $('#individualDetailsSection').show();
+                        $('#nonIndividualDetailsSection').hide();
+                        $('#individualDetailsSection input').prop('required', true);
+                        $('#nonIndividualDetailsSection input').prop('required', false);
+                        $('#FirstNme input').prop('required', true);
+                        $('#LastName input').prop('required', true);
+                        $('#OtherNames input').prop('required', false);
+                    } else {
+                        $('#individualDetailsSection').hide();
+                        $('#nonIndividualDetailsSection').show();
+                        $('#individualDetailsSection input').prop('required', false);
+                        $('#nonIndividualDetailsSection input').prop('required', true);
+                        $('#FirstNme input').prop('required', false);
+                        $('#LastName input').prop('required', false);
+                        $('#OtherNames input').prop('required', true);
+                    }
+                }
+            }
+
+            $('#IsExistingTenant').change(function () {
+                toggleSections();
+            });
+
+            $('#CreateAccount').change(function () {
+                toggleSections();
+            });
+
+            $('#IsIndividual').change(function () {
+                toggleSections();
+            });
+            toggleSections(); // Initial call
+
+            // Cascading dropdowns for property and unit
+            $('#propertyDropdown').change(function () {
+                var propertyId = $(this).val();
+                if (propertyId) {
+                    $.ajax({
+                        url: '/Tenants?handler=VacantUnits',
+                        type: 'GET',
+                        data: { propertyId: propertyId },
+                        success: function (data) {
+                            var unitDropdown = $('#unitDropdown');
+                            unitDropdown.empty();
+                            unitDropdown.append('<option value="">Select Unit</option>');
+                            $.each(data.value, function (index, item) {
+                                unitDropdown.append('<option value="' + item.value + '" data-standard-rate="' + item.standardRate + '">' + item.text + '</option>');
+                            });
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("Error: " + error);
+                        }
+                    });
+                } else {
+                    $('#unitDropdown').empty().append('<option value="">Select Unit</option>');
+                }
+            });
+            $('#unitDropdown').change(function () {
+                var selectedOption = $(this).find('option:selected');
+                var standardRate = selectedOption.data('standard-rate');
+                $('#unitAmount').val(standardRate);
+            });
+        });
+    </script>
+}

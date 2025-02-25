@@ -1,0 +1,75 @@
+﻿@page "/notifications"
+@model LetMasterWebApp.Pages.Reports.NotificationsModel
+@{
+    ViewData["Title"] = "List Sent Notifications";
+}
+<h2>@ViewData["Title"]</h2>
+<div class="mb-3">
+    <form method="post">
+        <div class="d-flex flex-wrap">
+            <div class="form-group mr-3">
+                <label for="Email" class="mr-2">Email</label>
+                <input type="text" id="Email" name="searchModel.Email" class="form-control mr-2" value="@Model.searchModel!.Email" />
+            </div>
+            <div class="form-group mr-3">
+                <label for="Mobile" class="mr-2">Mobile</label>
+                <input type="text" id="Mobile" name="searchModel.Mobile" class="form-control mr-2" value="@Model.searchModel!.Mobile" />
+            </div>
+            <div class="form-group mr-3">
+                <label for="Subject" class="mr-2">Subject</label>
+                <input type="text" id="Subject" name="searchModel.Subject" class="form-control mr-2" value="@Model.searchModel!.Subject" />
+            </div>
+            <div class="form-group mr-3">
+                <label for="DateFrom" class="mr-2">Date From</label>
+                <input type="date" id="DateFrom" name="searchModel.DateFrom" class="form-control mr-2" value="@Model.searchModel!.DateFrom.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="form-group mr-3">
+                <label for="DateTo" class="mr-2">Date To</label>
+                <input type="date" id="DateTo" name="searchModel.DateTo" class="form-control mr-2" value="@Model.searchModel.DateTo.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="form-group align-self-end">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+    </form>
+</div>
+@if (Model.Messages != null && Model.Messages.Items.Count > 0)
+{
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Mode</th>
+                <th>Subject</th>
+                <th>Reciepient</th>
+                <th>Message</th>
+                <th>Date Created</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var msg in Model.Messages.Items)
+            {
+                <tr>
+                    <td>@msg.MessageMode</td>
+                    <td>@msg.MessageSubject</td>
+                    <td>@msg.MessageReciepient</td>
+                    <td>@Html.Raw(msg.MessageBody)</td>
+                    <td>@msg.CreatedDate.ToString("yyyy-MM-dd")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div class="mt-3">
+        <a href="/notifications?pageIndex=@(Model.searchModel.Page - 1)&Email=@Model.searchModel.Email&Mobile=@Model.searchModel.Mobile&Subject=@Model.searchModel.Subject&DateFrom=@Model.searchModel.DateFrom&DateTo=@Model.searchModel.DateTo"
+           class="btn btn-primary @(Model.Messages.HasPrev ? "" : "disabled")">
+            Previous
+        </a>
+        <a href="/notifications?pageIndex=@(Model.searchModel.Page + 1)&Email=@Model.searchModel.Email&Mobile=@Model.searchModel.Mobile&Subject=@Model.searchModel.Subject&DateFrom=@Model.searchModel.DateFrom&DateTo=@Model.searchModel.DateTo"
+           class="btn btn-primary @(Model.Messages.HasNext ? "" : "disabled")">
+            Next
+        </a>
+    </div>
+}
+else
+{
+    <p>No notifications found for the selected criteria.</p>
+}

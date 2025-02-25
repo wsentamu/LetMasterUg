@@ -1,0 +1,64 @@
+﻿@page "/TenantAccounts"
+@model LetMasterWebApp.Pages.TenantMgt.ListTenantAccountsModel
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = "Tenant Account List";
+}
+<h1>Tenant Account List</h1>
+<div>
+    @if (Model.tenantAccountList != null && Model.tenantAccountList.Items.Count > 0)
+    {
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Contact</th>
+                    <th>Property Name</th>
+                    <th>Unit Number</th>
+                    <th>Billing Start Date</th>
+                    <th>Agreed Rate</th>
+                    <th>Current Balance</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var tenantItem in Model.tenantAccountList.Items)
+                {
+                    var bal = $"<p style=\"color:black;\">{@tenantItem.CurrentBalance.ToString("N2")}</p>";
+                    if (tenantItem.CurrentBalance <= 0)
+                    {
+                        bal = $"<p style=\"color:green;\">{@tenantItem.CurrentBalance.ToString("N2")}</p>";
+                    }
+                    <tr>
+                        <td>@tenantItem.TenantName</td>
+                        <td>@tenantItem.TenantMobile</td>
+                        <td>@tenantItem.PropertyName</td>
+                        <td>@tenantItem.UnitName</td>
+                        <td>@tenantItem.StartDate.ToString("MM/dd/yyyy")</td>
+                        <td>@tenantItem.AgreedRate.ToString("N2")</td>
+                        <td>@Html.Raw(bal)</td>
+                        <td><a class="btn btn-sm btn-info manage-btn" asp-page="/TenantMgt/ManageTenantAccount" asp-route-id="@tenantItem.TenantUnitId">Manage</a>
+                            <a class="btn btn-sm btn-warning statement-btn" asp-page="/Reports/TenantAccountStatement" asp-route-id="@tenantItem.TenantUnitId">Account Statement</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="mt-3">
+            <a href="/tenants?pageIndex=@(Model.tenantAccountList.CurrentPage - 1)&TenantName=@Model.searchModel.TenantName&UnitName=@Model.searchModel.UnitName&PropertyId=@Model.searchModel.PropertyId"
+               class="btn btn-primary @(Model.tenantAccountList.HasPrev ? "" : "disabled")">
+                Previous
+            </a>
+            <a href="/tenants?pageIndex=@(Model.tenantAccountList.CurrentPage + 1)&TenantName=@Model.searchModel.TenantName&UnitName=@Model.searchModel.UnitName&PropertyId=@Model.searchModel.PropertyId"
+               class="btn btn-primary @(Model.tenantAccountList.HasNext ? "" : "disabled")">
+                Next
+            </a>
+        </div>
+    }
+    else
+    {
+        <p class="mt-3">No active tenant accounts found.</p>
+    }
+</div>
+<!--Create Tenant Account Modal -->

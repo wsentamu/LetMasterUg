@@ -1,0 +1,266 @@
+﻿@page "/ManageTenantAccount/{id:int}"
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor httpContext
+@model LetMasterWebApp.Pages.TenantMgt.ManageTenantAccountModel
+@{
+    ViewData["Title"] = "Manage Tenant Account";
+}
+@if (TempData["AlertMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["AlertMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+<div class="card mb-3">
+    <div class="card-header">
+        <b>Tenant Account Details</b>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-sm-4">
+                <p class="card-text"><b>Tenant</b>: @Model.accountDetails!.TenantName</p>
+                <p class="card-text"><b>Contact</b>: @Model.accountDetails.TenantMobile @Model.accountDetails.TenantPhone</p>
+                <p class="card-text"><b>Email</b>: @Model.accountDetails.TenantEmail</p>
+            </div>
+            <div class="col-sm-4">
+                <p class="card-text"><b>Property Name</b>: @Model.accountDetails.PropertyName</p>
+                <p class="card-text"><b>Location</b>: @Model.accountDetails.PropertyAddress</p>
+                <p class="card-text"><b>Owner/Manager</b>: @Model.accountDetails.PropertyManager</p>
+                <p class="card-text"><b>Owner/Manager Contact</b>: @Model.accountDetails.PropertyManagerMobile @Model.accountDetails.PropertyManagerPhone</p>
+                <p class="card-text"><b>Owner/Manager Email</b>: @Model.accountDetails.PropertyManagerEmail </p>
+            </div>
+            <div class="col-sm-4">
+                <p class="card-text"><b>Unit No.</b>: @Model.accountDetails.UnitNo</p>
+                <p class="card-text"><b>Unit Type</b>: @Model.accountDetails.UnitType</p>
+                <p class="card-text"><b>Unit Description</b>: @Model.accountDetails.UnitDesc</p>
+                <p class="card-text"><b>Agreed Rate</b>: @Model.accountDetails.AgreedRate.Value.ToString("N2")</p>
+                <p class="card-text"><b>Start Date</b>: @Model.accountDetails.StartDate</p>
+                <p class="card-text"><b>Total Bills</b>: @Model.accountDetails.TotalBills.ToString("N2")</p>
+                <p class="card-text"><b>Total Payments</b>: @Model.accountDetails.TotalPayments.ToString("N2")</p>
+                <p class="card-text"><b>Current Balance</b>: @Model.accountDetails.CurrentBalance.Value.ToString("N2")</p>
+            </div>
+        </div>
+    </div>
+</div>
+@if (httpContext.HttpContext!.User.IsInRole("Manager")){
+    <div class="mb-3">
+        <h4>Tenant Account Management Tools</h4>
+        <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#updateTenantAccountModal">
+        <strong>Update Account</strong>
+    </button>
+        <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#postTransactionModal">
+        <strong>Post Transaction</strong>
+    </button>
+    </div>
+}
+@if (httpContext.HttpContext!.User.IsInRole("Tenant"))
+{
+    <div class="mb-3">
+        <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#mmDebitRequestModal">
+            <strong>Pay With Mobile Money</strong>
+        </button>
+    </div>
+}
+<br/>
+<div class="mb-3">
+    <form method="get">
+        <div class="d-flex flex-wrap">
+            <div class="form-group mr-3">
+                <label asp-for="transactionSearch.FromDate"></label>
+                <input type="date" class="form-control" id="FromDate" name="FromDate" value="@Model.transactionSearch.FromDate" required>
+            </div>
+            <div class="form-group mr-3">
+                <label asp-for="transactionSearch.ToDate"></label>
+                <input type="date" class="form-control" id="ToDate" name="ToDate" value="@Model.transactionSearch.ToDate" required>
+            </div>
+            <div class="form-group align-self-end">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="tab-pane fade show active" id="results" role="tabpanel" aria-labelledby="results-tab">
+    @if (Model.transactionList != null && Model.transactionList.Items.Count > 0)
+    {
+        <h2 class="mt-3">Transaction List</h2>
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>Transaction Type</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Transaction Date</th>
+                    <th>Transaction Mode</th>
+                    <th>Transaction Reference</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var txn in Model.transactionList.Items)
+                {
+                    <tr>
+                        <td>
+                            @if (txn.TransactionType == "D")
+                            {
+                                <text>DEBIT</text>
+                            }
+                            else if (txn.TransactionType == "C")
+                            {
+                                <text>CREDIT</text>
+                            }
+                        </td>
+                        <td>@txn.Description</td>
+                        <td>@txn.Amount!.Value.ToString("N2")</td>
+                        <td>@txn.TransactionDate</td>
+                        <td>@txn.TransactionMode</td>
+                        <td>@txn.TransactionRef</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="mt-3">
+            <a href="/ManageTenantAccount/@Model.accountDetails.Id?pageIndex=@(Model.transactionList.CurrentPage - 1)&FromDate=@Model.transactionSearch.FromDate&ToDate=@Model.transactionSearch.ToDate"
+               class="btn btn-primary @(Model.transactionList.HasPrev ? "" : "disabled")">
+                Previous
+            </a>
+            <a href="/ManageTenantAccount/@Model.accountDetails.Id?pageIndex=@(Model.transactionList.CurrentPage + 1)&FromDate=@Model.transactionSearch.FromDate&ToDate=@Model.transactionSearch.ToDate"
+               class="btn btn-primary @(Model.transactionList.HasNext ? "" : "disabled")">
+                Next
+            </a>
+        </div>
+    }
+    else
+    {
+        <p class="mt-3">No transactions found.</p>
+    }
+</div>
+<!-- Update Tenant Account Modal -->
+<div class="modal fade" id="updateTenantAccountModal" tabindex="-1" role="dialog" aria-labelledby="updateTenantAccountModal" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="updateTenantAccountForm" method="post" asp-page-handler="UpdateTenantAccount">
+                @Html.AntiForgeryToken()
+                @if (ModelState.IsValid)
+                {
+                    <div asp-validation-summary="All" class="text-danger"></div>
+                }
+                <input type="hidden" asp-for="accountUpdate.Id">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="updateTenantAccountModal">Update Tenant Account</h5>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label asp-for="accountUpdate.AgreedRate"></label>
+                        <input asp-for="accountUpdate.AgreedRate" type="number" class="form-control" required id="unitAmount" />
+                    </div>
+                    <div class="form-group">
+                        <input asp-for="accountUpdate.IsActive" class="form-check-input" id="unitIsActive">
+                        <label asp-for="accountUpdate.IsActive" class="form-check-label"></label>
+                    </div> 
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Post Transaction Modal [transactionCreate] -->
+<div class="modal fade" id="postTransactionModal" tabindex="-1" role="dialog" aria-labelledby="postTransactionModal" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="postTransactionForm" method="post" asp-page-handler="PostTransaction">
+                @Html.AntiForgeryToken()
+                @if (ModelState.IsValid)
+                {
+                    <div asp-validation-summary="All" class="text-danger"></div>
+                }
+                <input type="hidden" asp-for="transactionCreate.TenantUnitId">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="postTransactionModalLabel">Post Transaction</h5>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <label asp-for="transactionCreate.TransactionType">*</label>
+                    <div class="form-group">
+                    <select asp-for="transactionCreate.TransactionType" class="form-control" id="TransactionType">
+                        <option value="C">Credit (Add Payment)</option>
+                        <option value="D">Debit (AddBill)</option>
+                    </select>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="transactionCreate.Description">*</label>
+                        <input asp-for="transactionCreate.Description" required class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="transactionCreate.Amount">*</label>
+                        <input asp-for="transactionCreate.Amount" type="number" class="form-control" required id="Amount" />
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="transactionCreate.TransactionMode"></label>
+                        <input asp-for="transactionCreate.TransactionMode" placeholder="Cash/Bank/Mobile Money" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="transactionCreate.TransactionRef"></label>
+                        <input asp-for="transactionCreate.TransactionRef" class="form-control" placeholder="Receipt no./MM Transaction No." />
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="transactionCreate.TransactionDate">*</label>
+                        <input asp-for="transactionCreate.TransactionDate" class="form-control" type="date" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!--MM request-->
+<div class="modal fade" id="mmDebitRequestModal" tabindex="-1" role="dialog" aria-labelledby="mmDebitRequestModal" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="mmDebitRequestForm" method="post" asp-page-handler="MmDebitRequest">
+                @Html.AntiForgeryToken()
+                @if (ModelState.IsValid)
+                {
+                    <div asp-validation-summary="All" class="text-danger"></div>
+                }
+                <input type="hidden" asp-for="mobileMoneyCreate.TenantUnitId">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mobileMoneyCreateModalLabel">Pay With Mobile Money</h5>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label asp-for="mobileMoneyCreate.Amount"></label>
+                        <input asp-for="mobileMoneyCreate.Amount" type="number" class="form-control" required id="Amount" placeholder="500 - 5,000,000"/>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="mobileMoneyCreate.DebitNumber"></label>
+                        <input asp-for="mobileMoneyCreate.DebitNumber" class="form-control" placeholder="eg .752123456"/>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Initiate Mobile Money Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

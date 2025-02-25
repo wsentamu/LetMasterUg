@@ -1,0 +1,60 @@
+﻿@page
+@model LetMasterWebApp.Pages.Admin.EditModel
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit</h1>
+
+<h4>PropertyType</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="PropertyType.Name" class="control-label"></label>
+                <input asp-for="PropertyType.Name" class="form-control" />
+                <span asp-validation-for="PropertyType.Name" class="text-danger"></span>
+            </div>
+            <input type="hidden" asp-for="PropertyType.Id" />
+            <div class="form-group">
+                <label asp-for="PropertyType.CreatedBy" class="control-label"></label>
+                <input asp-for="PropertyType.CreatedBy" class="form-control" />
+                <span asp-validation-for="PropertyType.CreatedBy" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="PropertyType.CreatedDate" class="control-label"></label>
+                <input asp-for="PropertyType.CreatedDate" class="form-control" />
+                <span asp-validation-for="PropertyType.CreatedDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="PropertyType.UpdatedBy" class="control-label"></label>
+                <input asp-for="PropertyType.UpdatedBy" class="form-control" />
+                <span asp-validation-for="PropertyType.UpdatedBy" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="PropertyType.UpdatedDate" class="control-label"></label>
+                <input asp-for="PropertyType.UpdatedDate" class="form-control" />
+                <span asp-validation-for="PropertyType.UpdatedDate" class="text-danger"></span>
+            </div>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="PropertyType.IsActive" /> @Html.DisplayNameFor(model => model.PropertyType.IsActive)
+                </label>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-page="./Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

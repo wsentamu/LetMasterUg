@@ -1,0 +1,422 @@
+﻿@page "/ManageProperty/{id:int}"
+@model LetMasterWebApp.Pages.PropertyMgt.ManagePropertyModel
+@{
+    ViewData["Title"] = "Manage Property";
+}
+@if (TempData["AlertMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["AlertMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+<div id="alertContainer"></div>
+<div class="card mb-3">
+    <div class="card-header">
+        <b>Property Details</b>: @Model.property!.Name
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-sm-6">
+                <p class="card-text"><b>Owner/Manager</b>: @Model.property.PropertyManager</p>
+                <p class="card-text"><b>Type</b>: @Model.property.PropertyType</p>
+                <p class="card-text"><b>Address</b>: @Model.property.Address</p>
+                <p class="card-text"><b>Description</b>: @Model.property.Description</p>
+            </div>
+            <div class="col-sm-6">
+                <p class="card-text"><b>Total Units</b>: @Model.property.TotalUnits</p>
+                <p class="card-text"><b>Occupied Units</b>: @Model.property.OccupiedUnits</p>
+                <p class="card-text"><b>Location Coordinates</b>: @Model.property.Coordinates</p>
+                <p class="card-text"><b>Active</b>: @Model.property.IsActive</p>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="mb-3">
+    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#createUnitModal"><strong>Create New Unit(s)</strong></button>
+    <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#expenseModal"><strong>Add Expense</strong></button>
+</div>
+<br/>
+<div class="mb-3">
+    <form method="get">
+        <div class="d-flex flex-wrap">
+            <div class="form-group mr-3">
+                <label for="UnitName">Unit Number</label>
+                <input type="text" class="form-control" id="UnitName" name="UnitName" value="@Model.unitSearch!.Name" placeholder="Unit Number">
+            </div>
+            <div class="form-group mr-3">
+                <label for="IsOccupied">Unit Occupancy</label>
+                <select class="form-control" id="IsOccupied" name="IsOccupied">
+                    <option value="">Select Unit Status</option>
+                    <option value="false">Vacant</option>
+                    <option value="true">Occupied</option>
+                </select>
+            </div>
+            <div class="form-group mr-3">
+                <label for="UnitTypeId">Unit Type</label>
+                <select class="form-control" id="UnitTypeId" name="UnitTypeId">
+                    <option value="">Select Unit Type</option>
+                    @foreach (var unit in Model.unitTypes!)
+                    {
+                        <option value="@unit.Value">@unit.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group mr-3">
+                <label for="IsActive">Unit Active</label>
+                <select class="form-control" id="IsActive" name="IsActive">
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                </select>
+            </div>
+            <div class="form-group align-self-end">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="tab-pane fade show active" id="results" role="tabpanel" aria-labelledby="results-tab">
+    @if (Model.unitList != null && Model.unitList.Items.Count > 0)
+    {
+        <h2 class="mt-3">Units</h2>
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Unit Type</th>
+                    <th>Standard Rate</th>
+                    <th>Is Occupied</th>
+                    <th>Is Active</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var unitItem in Model.unitList.Items)
+                {
+                    <tr>
+                        <td>@unitItem.Name</td>
+                        <td>@unitItem.UnitType</td>
+                        <td>@unitItem.StandardRate!.Value.ToString("N2")</td>
+                        <td>@unitItem.IsOccupied</td>
+                        <td>@unitItem.IsActive</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-warning edit-btn" data-bs-toggle="modal" data-bs-target="#editUnitModal" data-unit-id="@unitItem.Id">Edit</button>
+                            @* <a class="btn btn-sm btn-info manage-btn" asp-page="/PropertyMgt/ManageProperty" asp-route-id="@propertyItem.Id">Manage</a> *@
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="mt-3">
+            <a href="/ManageProperty/@Model.property.Id?pageIndex=@(Model.unitList.CurrentPage - 1)&IsOccupied=@Model.unitSearch.IsOccupied&UnitTypeId=@Model.unitSearch.UnitTypeId&PropertyId=@Model.unitSearch.PropertyId"
+               class="btn btn-primary @(Model.unitList.HasPrev ? "" : "disabled")">
+                Previous
+            </a>
+            <a href="/ManageProperty/@Model.property.Id?pageIndex=@(Model.unitList.CurrentPage + 1)&IsOccupied=@Model.unitSearch.IsOccupied&UnitTypeId=@Model.unitSearch.UnitTypeId&PropertyId=@Model.unitSearch.PropertyId"
+               class="btn btn-primary @(Model.unitList.HasNext ? "" : "disabled")">
+                Next
+            </a>
+        </div>
+    }
+    else
+    {
+        <p class="mt-3">No units found under this property.</p>
+    }
+</div>
+@* Create Unit Modal *@
+<div class="modal fade" id="createUnitModal" tabindex="-1" aria-labelledby="createUnitModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createUnitModalLabel">Create New Unit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" id="unitCreateForm" asp-page-handler= "CreateUnit">
+                    @Html.AntiForgeryToken()
+                    <input asp-for="unitCreate.PropertyId" class="form-control" type="hidden"/>
+                    <div class="form-group">
+                        <label asp-for="unitCreate.Name"></label>
+                        <input asp-for="unitCreate.Name" class="form-control" id="nameField" />
+                        <span asp-validation-for="unitCreate.Name" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="unitCreate.UnitTypeId"></label>
+                        <select asp-for="unitCreate.UnitTypeId" class="form-control" required>
+                            <option value="">-- Select Unit Type --</option>
+                            @* Populate this with unit types dynamically *@
+                            @if (Model.unitTypes != null)
+                            {
+                                @foreach (var type in Model.unitTypes)
+                                {
+                                    <option value="@type.Value">@type.Text</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="unitCreate.UnitTypeId" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="unitCreate.Description"></label>
+                        <textarea asp-for="unitCreate.Description" class="form-control"></textarea>
+                        <span asp-validation-for="unitCreate.Description" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="unitCreate.StandardRate"></label>
+                        <input asp-for="unitCreate.StandardRate" class="form-control" type="number" required/>
+                        <span asp-validation-for="unitCreate.StandardRate" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-check">
+                            <label asp-for="unitCreate.IsBulkEntry" class="form-check-label"></label>
+                            <input asp-for="unitCreate.IsBulkEntry" class="form-check-input" id="isBulkEntry" />
+                        </div>
+                    </div>
+                    <div id="bulkEntryFields" style="display:none;">
+                        <div class="form-group">
+                            <label asp-for="unitCreate.BulkCount"></label>
+                            <input asp-for="unitCreate.BulkCount" class="form-control" id="bulkCountField" />
+                            <span asp-validation-for="unitCreate.BulkCount" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="unitCreate.UnitSeries"></label>
+                            <input asp-for="unitCreate.UnitSeries" class="form-control" id="unitSeriesField" />
+                            <span asp-validation-for="unitCreate.UnitSeries" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-check">
+                                <label asp-for="unitCreate.UnitSeriesPrefix" class="form-check-label"></label>
+                                <input asp-for="unitCreate.UnitSeriesPrefix" class="form-check-input" id="unitSeriesPrefixField" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-sm btn-primary">Create Unit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@* Edit Unit Modal *@
+<!-- Edit Unit Modal -->
+<div class="modal fade" id="editUnitModal" tabindex="-1" aria-labelledby="editUnitModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editUnitModalLabel">Edit Unit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="unitUpdateForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="unitUpdate.Id" id="unitId">
+                    <input type="hidden" asp-for="unitUpdate.PropertyId" id="propertyId">
+                    <div class="form-group">
+                        <label asp-for="unitUpdate.Name"></label>
+                        <input asp-for="unitUpdate.Name" class="form-control" id="unitName">
+                        <span asp-validation-for="unitUpdate.Name" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="unitUpdate.Description"></label>
+                        <textarea asp-for="unitUpdate.Description" class="form-control" id="unitDescription"></textarea>
+                        <span asp-validation-for="unitUpdate.Description" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="unitUpdate.StandardRate"></label>
+                        <input asp-for="unitUpdate.StandardRate" class="form-control" id="unitStandardRate">
+                        <span asp-validation-for="unitUpdate.StandardRate" class="text-danger"></span>
+                    </div>
+                    <div class="form-group form-check">
+                        <input asp-for="unitUpdate.IsActive" class="form-check-input" id="unitIsActive">
+                        <label asp-for="unitUpdate.IsActive" class="form-check-label"></label>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-sm btn-primary">Save changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Add Property Expense Modal-->
+<div class="modal fade" id="expenseModal" tabindex="-1" aria-labelledby="expenseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="expenseModalLabel">Add Expense</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="expenseForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <input asp-for="expenseCreate.PropertyId" class="form-control" type="hidden" id="propertyId"/>
+                    <div class="mb-3">
+                        <label asp-for="expenseCreate.ExpenseTypeId" class="form-label"></label>
+                        <select asp-for="expenseCreate.ExpenseTypeId" class="form-control" required>
+                            <option value="">-- Select Expense Type --</option>
+                            @* Populate this with unit types dynamically *@
+                            @if (Model.expenseTypes != null)
+                            {
+                                @foreach (var type in Model.expenseTypes)
+                                {
+                                    <option value="@type.Value">@type.Text</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="expenseCreate.ExpenseTypeId" class="text-danger"></span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label asp-for="expenseCreate.UnitId" class="form-label"></label>
+                        <select asp-for="expenseCreate.UnitId" class="form-control">
+                            <option value="">-- Select Unit --</option>
+                            @* Populate this with unit types dynamically *@
+                            @if (Model.units != null)
+                            {
+                                @foreach (var unit in Model.units)
+                                {
+                                    <option value="@unit.Value">@unit.Text</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="expenseCreate.UnitId" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="expenseCreate.Description" class="form-label"></label>
+                        <input asp-for="expenseCreate.Description" class="form-control" />
+                        <span asp-validation-for="expenseCreate.Description" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="expenseCreate.Amount" class="form-label"></label>
+                        <input asp-for="expenseCreate.Amount" class="form-control" type="number" required/>
+                        <span asp-validation-for="expenseCreate.Amount" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="expenseCreate.TransactionDate" class="form-label"></label>
+                        <input asp-for="expenseCreate.TransactionDate" class="form-control" />
+                        <span asp-validation-for="expenseCreate.TransactionDate" class="text-danger"></span>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-sm btn-primary">Add Expense</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts{
+<script>
+            $(document).ready(function () {
+                // Handle edit button click to fetch and display property details in modal
+                $('.edit-btn').on('click', function () {
+                    var unitId = $(this).data('unit-id');
+                    console.log(unitId);
+                    $.ajax({
+                    url: '/ManageProperty/'+unitId+'?handler=UnitDetails',
+                        type: 'GET',
+                        data: { id: unitId },
+                        success: function (data) {
+                            console.log(data);
+                        $('#editUnitModal #unitId').val(data.id);
+                        $('#editUnitModal #propertyId').val(data.propertyId);
+                        $('#editUnitModal #unitName').val(data.name);
+                        $('#editUnitModal #unitDescription').val(data.description);
+                        $('#editUnitModal #unitStandardRate').val(data.standardRate);
+                        $('#editUnitModal #unitIsActive').prop('checked', data.isActive);
+                        $('#editUnitModal').modal('show');
+                        },
+                        error: function (xhr, status, error) {
+                            console.error(xhr.responseText);
+                            alert("An error occurred while fetching unit details.");
+                        }
+                    });
+                });
+                // Handle bulk entry checkbox and related fields
+                const isBulkEntryCheckbox = document.getElementById('isBulkEntry');
+                const bulkEntryFields = document.getElementById('bulkEntryFields');
+                const nameField = document.getElementById('nameField');
+                const bulkCountField = document.getElementById('bulkCountField');
+                const unitSeriesField = document.getElementById('unitSeriesField');
+                const unitSeriesPrefixField = document.getElementById('unitSeriesPrefixField');
+
+                isBulkEntryCheckbox.addEventListener('change', function () {
+                    if (isBulkEntryCheckbox.checked) {
+                        bulkEntryFields.style.display = 'block';
+                        nameField.value = '';
+                        nameField.disabled = true;
+                        nameField.required = false;
+                        bulkCountField.required = true;
+                    } else {
+                        bulkEntryFields.style.display = 'none';
+                        nameField.disabled = false;
+                        nameField.required = true;
+                        bulkCountField.required = false;
+                    }
+                });
+
+                // Trigger the change event on page load to set the initial state correctly
+                isBulkEntryCheckbox.dispatchEvent(new Event('change'));
+            // Handle form submission via AJAX
+            $('#unitUpdateForm').on('submit', function (event) {
+                event.preventDefault();
+                var propertyId = $('#editUnitModal #propertyId').val();
+                console.log(propertyId);
+                $.ajax({
+                    url: '/ManageProperty/'+propertyId+'?handler=UpdateUnit',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function (data) {
+                        if (data.success) {
+                            showAlert('Unit updated successfully', 'success');
+                            location.reload(); // Reload the page to reflect the changes
+                        } else {
+                            showAlert("Failed to update unit. Please try again.");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        showAlert("An error occurred while updating the unit.");
+                    }
+                });
+            });
+            $('#expenseForm').on('submit', function (e) {
+                e.preventDefault();
+                var propertyId = $('#expenseModal #propertyId').val();
+                console.log(propertyId);
+                $.ajax({
+                    type: 'POST',
+                    url: '/ManageProperty/' + propertyId + '?handler=AddExpense',
+                    data: $(this).serialize(),
+                    success: function (data) {
+                        if (data.success) {
+                            showAlert('Expense added successfully!', 'success');
+                            $('#expenseModal').modal('hide');
+                            form[0].reset();
+                            location.reload();
+                        } else {
+                            showAlert('Failed to add expense: ' + data.message, 'danger');
+                        }
+                    },
+                    error: function () {
+                        showAlert('An error occurred while adding the expense.');
+                    }
+                });
+            });
+            function showAlert(message, type) {
+                var alertHtml = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                                    ${message}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                 </div>`;
+                $('#alertContainer').html(alertHtml);
+            }
+        });
+</script>
+}
